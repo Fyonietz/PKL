@@ -4,9 +4,11 @@ file(GLOB_RECURSE HANDLER_FILES "${CMAKE_CURRENT_SOURCE_DIR}/*.cpp")
 
 # Find all .cpp files in main/routes/ (user route files like test.cpp)
 file(GLOB_RECURSE ROUTE_FILES "${CMAKE_SOURCE_DIR}/main/routes/*.cpp")
-
+file(GLOB_RECURSE MODEL_FILES "${CMAKE_SOURCE_DIR}/main/model/*.cpp")
+file(GLOB_RECURSE MIDDLEWARE_FILE "${CMAKE_SOURCE_DIR}/main/middleware/*.cpp")
+file(GLOB_RECURSE DATABASE_FILES "${CMAKE_SOURCE_DIR}/main/database/*.cpp")
 # Combine both
-set(ROUTES ${HANDLER_FILES} ${ROUTE_FILES})
+set(ROUTES ${HANDLER_FILES} ${ROUTE_FILES} ${MODEL_FILES} ${MIDDLEWARE_FILE} ${DATABASE_FILES})
 
 # Debug: Print what files were found
 message(STATUS "Handler files: ${HANDLER_FILES}")
@@ -28,6 +30,9 @@ target_include_directories(routes
     PUBLIC ${CMAKE_SOURCE_DIR}/core/libs/
     PUBLIC ${CMAKE_SOURCE_DIR}/core/phoenix/
     PUBLIC ${CMAKE_SOURCE_DIR}/main/routes/
+    PUBLIC ${CMAKE_SOURCE_DIR}/main/model/
+    PUBLIC ${CMAKE_SOURCE_DIR}/main/middleware/
+    PUBLIC ${CMAKE_SOURCE_DIR}/main/database/
 )
 
 # Link against the 'dl' library (dynamic linking)
