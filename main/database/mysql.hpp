@@ -1,46 +1,56 @@
-
-#ifndef MYSQL_HPP
-#define MYSQL_HPP
+#ifndef MYSQL_POOL_HPP
+#define MYSQL_POOL_HPP
 
 #include <mysql/mysql.h>
 #include <json.hpp>
 #include <string>
-#include <cstdlib>  // For std::getenv
-#include <stdexcept>
+#include <queue>
 #include <mutex>
-#include <pyro.hpp> // Assuming Server.env() is provided by this
+#include <condition_variable>
+#include <memory>
+#include <atomic>
+#include <stdexcept>
+#include <pyro.hpp>
 
 using namespace nlohmann;
 
-class MySQL {
+class MySQLPool {
 private:
-    MYSQL *conn;
-    static MySQL* instance;
-    static std::mutex mutex;
+    std::queue<MYSQL*> connections;
+    std::mutex mutex;
+    std::condition_variable condition;
+    std::string host, user, password, dbname;
+    unsigned int port;
+    size_t max_pool_size;
+    std::atomic<size_t> current_pool_size;
 
-    // Private constructor to prevent instantiation
-    MySQL(const std::string& host, const std::string& user, const std::string& password, const std::string& dbname, unsigned int port);
+    MYSQL* create_connection();
 
 public:
-    // Deleted copy constructor and assignment operator to enforce singleton behavior
-    MySQL(const MySQL&) = delete;
-    MySQL& operator=(const MySQL&) = delete;
+    MySQLPool(const std::string& host, const std::string& user, 
+              const std::string& password, const std::string& dbname, 
+              unsigned int port = 3306, size_t max_pool_size = 20);
+    
+    ~MySQLPool();
 
-    // Static method to get the singleton instance
-    static MySQL* getInstance();
+    // Delete copy constructor and assignment operator
+    MySQLPool(const MySQLPool&) = delete;
+    MySQLPool& operator=(const MySQLPool&) = delete;
 
-    // Destructor to clean up the connection
-    ~MySQL();
+    std::shared_ptr<MYSQL> get_connection();
+    void return_connection(MYSQL* conn);
 
-    // Public methods to perform database operations
-    MYSQL* getConnection();
-    int db_query(const char *query);
-    MYSQL_RES* db_store_result();
-    json db_select(const char *query);
-    void db_print_error();
+    // Database operations
+    int db_query(MYSQL* conn, const char *query);
+    MYSQL_RES* db_store_result(MYSQL* conn);
+    json db_select(MYSQL* conn, const char *query);
+    void db_print_error(MYSQL* conn);
+    
+    // Static method to get pool instance
+    static MySQLPool* getInstance();
 };
 
-#endif // MYSQL_HPP
+#endif // MYSQL_POOL_HPP
 
 
 

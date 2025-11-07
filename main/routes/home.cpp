@@ -1,3 +1,4 @@
+#include "civetweb.h"
 #include <cstring>
 #include <phoenix.hpp>
 route("/api", api) {
@@ -34,3 +35,4 @@ route("/api/cors", cors) {
   Server.Response(connection, 200, "Ok", R"({"Message":"Success"})");
   return 200;
 }
+

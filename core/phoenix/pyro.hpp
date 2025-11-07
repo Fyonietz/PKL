@@ -141,6 +141,8 @@ struct Pnix {
         ip_origin.c_str());
   }
   // Function to handle OPTIONS (pre-flight) request
+  
+
   int CORS_OPTIONS(struct mg_connection *conn) {
     // Respond to the OPTIONS request (CORS pre-flight check)
     mg_printf(conn, "HTTP/1.1 200 OK\r\n");
