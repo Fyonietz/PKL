@@ -1,6 +1,5 @@
 #include "models.hpp"
 #include "mysql.hpp"
-#include <bit>
 #include <exception>
 #include <phoenix.hpp>
 #include <middleware.hpp>
