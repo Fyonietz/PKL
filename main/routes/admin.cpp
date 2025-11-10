@@ -80,15 +80,12 @@ route("/api/admin/user/create", create_user) {
 }
 
 route("/api/admin/user/read", read_user) {
-  std::cout << "=== /api/admin/user/read started ===" << std::endl;
   
   auto authInfo = CheckAuthToken(connection, Auth::Roles::Admin);
-  std::cout << "Auth result: " << (authInfo ? "SUCCESS" : "FAILED") << std::endl;
   
   CORS(connection);
   
   if(!authInfo){
-    std::cout << "Returning 401 Unauthorized" << std::endl;
     Server.Response(connection, 401, "Unauthorized", R"({"error":"Unauthorized"})");
     return 401;
   }
@@ -99,19 +96,15 @@ route("/api/admin/user/read", read_user) {
   }
   
   try {
-    std::cout << "Starting database query..." << std::endl;
     
     auto a = Server.method.async([&]() -> std::pair<int, std::string> {
       auto db = MySQLPool::getInstance();
       auto conn = db->get_connection();
 
       nlohmann::json query = db->db_select(conn.get(), "SELECT * FROM Users");
-      std::cout << "Query result type: " << query.type_name() << std::endl;
-      std::cout << "Query result size: " << query.size() << std::endl;
       
       if (query.is_array() && !query.empty()) {
         std::string result = query.dump();
-        std::cout << "First 100 chars of result: " << result.substr(0, 100) << std::endl;
         return std::make_pair(200, result);
       } else {
         return std::make_pair(404, R"({"error":"No users found"})");
@@ -119,7 +112,6 @@ route("/api/admin/user/read", read_user) {
     });
     
     auto [status, response_data] = a.get();
-    std::cout << "Async completed with status: " << status << std::endl;
     Server.Response(connection, status, status == 200 ? "Ok" : "Error", response_data);
     return status;
 
