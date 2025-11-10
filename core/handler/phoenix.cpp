@@ -86,7 +86,6 @@ EXPORT int home(struct mg_connection *connection, void *callback) {
   return 200;
 };
 
-route("/home", root) {
-  Server.static_serve("main/public/index.html", connection);
-  return 200;
-}
+
+
+

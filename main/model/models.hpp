@@ -39,8 +39,6 @@ struct modelUsers {
   int tempatPerusahaanId;
   std::string siswaDibimbing;
   int jurusanKaprodiId;
-  std::string alamatPerusahaan;
-  std::string benefitPerusahaan;
   int jurusanPerusahaanId;
 };
 

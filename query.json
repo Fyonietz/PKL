@@ -1,0 +1,17 @@
+//Api Create Users
+//[/api/admin/user/create]
+
+{
+  "Id": 1,
+  "JurusanId": 1,
+  "JurusanKaprodiId": 1,
+  "JurusanPerusahaanId": 1,
+  "KelasId": 1,
+  "Nama": "Admin",
+  "NamaPembimbing": "",
+  "Password": "ggmu",
+  "Roles": 1,
+  "SiswaDibimbing": "",
+  "TempatPerusahaanId": 1
+}
+
