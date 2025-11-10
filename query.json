@@ -15,3 +15,9 @@
   "TempatPerusahaanId": 1
 }
 
+//Api Read Users[filtering]
+//[/api/admin/user/create]
+{
+  "where":"Roles",
+  "value": 2
+}

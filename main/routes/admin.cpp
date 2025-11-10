@@ -4,15 +4,19 @@
 #include <iostream>
 #include <middleware.hpp>
 #include <phoenix.hpp>
+#include <string>
 
 route("/api/admin/user/create", create_user) {
-  auto authInfo = CheckAuthToken(connection,Auth::Roles::Admin);
-  if(!authInfo){
-    Server.Response(connection,401,"Unauthorized","");
+  auto authInfo = CheckAuthToken(connection, Auth::Roles::Admin);
+
+  CORS(connection);
+
+  if (!authInfo) {
+    Server.Response(connection, 401, "Unauthorized",
+                    R"({"error":"Unauthorized"})");
     return 401;
   }
   std::string post = Server.Read(connection);
-  CORS(connection);
 
   if (!ASYNC) {
     Server.Response(connection, 500, "Error",
@@ -79,45 +83,96 @@ route("/api/admin/user/create", create_user) {
   return 200;
 }
 
-route("/api/admin/user/read", read_user) {
-  
+route("/api/admin/user/read", read_user_test) {
   auto authInfo = CheckAuthToken(connection, Auth::Roles::Admin);
-  
   CORS(connection);
-  
-  if(!authInfo){
-    Server.Response(connection, 401, "Unauthorized", R"({"error":"Unauthorized"})");
+
+  if (!authInfo) {
+    Server.Response(connection, 401, "Unauthorized",
+                    R"({"error":"Unauthorized"})");
     return 401;
   }
-  
+
   if (!ASYNC) {
-    Server.Response(connection, 500, "Error", R"({"Message":"ASYNC mode Error"})");
+    Server.Response(connection, 500, "Error",
+                    R"({"Message":"ASYNC mode Error"})");
     return 500;
   }
-  
-  try {
-    
-    auto a = Server.method.async([&]() -> std::pair<int, std::string> {
-      auto db = MySQLPool::getInstance();
-      auto conn = db->get_connection();
 
-      nlohmann::json query = db->db_select(conn.get(), "SELECT * FROM Users");
-      
-      if (query.is_array() && !query.empty()) {
-        std::string result = query.dump();
-        return std::make_pair(200, result);
-      } else {
-        return std::make_pair(404, R"({"error":"No users found"})");
-      }
-    });
-    
+  // Read the POST data BEFORE entering the async function
+  std::string post_data;
+  const struct mg_request_info *req_info = mg_get_request_info(connection);
+
+  if (strcmp(req_info->request_method, "POST") == 0) {
+    post_data = Server.Read(connection);
+  }
+
+  try {
+    auto a = Server.method.async(
+        [&, post_data]()
+            -> std::pair<int, std::string> { // Capture post_data by value
+          auto db = MySQLPool::getInstance();
+          auto conn = db->get_connection();
+          nlohmann::json query;
+
+          if (strcmp(req_info->request_method, "GET") == 0) {
+            query = db->db_select(conn.get(), "SELECT * FROM Users");
+          } else if (strcmp(req_info->request_method, "POST") == 0) {
+            if (!post_data.empty()) {
+              try {
+                nlohmann::json post_as_json = nlohmann::json::parse(post_data);
+                std::string key = post_as_json.value("where", "Roles");
+                const auto &value = post_as_json["value"];
+                if (value.is_number_integer()) {
+                  // IMPORTANT: Escape the key to prevent SQL injection
+                  char escaped_key[key.length() * 2 + 1];
+                  mysql_real_escape_string(conn.get(), escaped_key, key.c_str(),
+                                           key.length());
+                  int valInt = value.get<int>();
+                  std::string querys = "SELECT * FROM Users WHERE " +
+                                       std::string(escaped_key) + "=" +
+                                       std::to_string(valInt);
+                  query = db->db_select(conn.get(), querys.c_str());
+                } else if (value.is_string()) {
+                  // IMPORTANT: Escape the key to prevent SQL injection
+                  char escaped_key[key.length() * 2 + 1];
+                  mysql_real_escape_string(conn.get(), escaped_key, key.c_str(),
+                                           key.length());
+                  std::string valString = value.get<std::string>();
+                  std::string querys = "SELECT * FROM Users WHERE " +
+                                       std::string(escaped_key) + "=" + "'" +
+                                       valString + "'";
+                  query = db->db_select(conn.get(), querys.c_str());
+                }
+
+              } catch (const std::exception &e) {
+                std::cerr << "JSON parse error: " << e.what() << std::endl;
+                return std::make_pair(400, R"({"error":"Invalid JSON"})");
+              }
+            } else {
+              return std::make_pair(400, R"({"error":"No POST data"})");
+            }
+          } else {
+            return std::make_pair(405, R"({"error":"Method Not Allowed"})");
+          }
+
+          if (query.is_array() && !query.empty()) {
+            std::string result = query.dump();
+            return std::make_pair(200, result);
+          } else {
+            return std::make_pair(404, R"({"error":"No users found"})");
+          }
+        });
+
     auto [status, response_data] = a.get();
-    Server.Response(connection, status, status == 200 ? "Ok" : "Error", response_data);
+    Server.Response(connection, status, status == 200 ? "Ok" : "Error",
+                    response_data);
     return status;
 
   } catch (std::exception &e) {
     std::cerr << "Internal Error: " << e.what() << std::endl;
-    Server.Response(connection, 500, "Error", R"({"error":"Internal Server Error"})");
+    Server.Response(connection, 500, "Error",
+                    R"({"error":"Internal Server Error"})");
     return 500;
   }
 }

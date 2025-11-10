@@ -1,3 +1,5 @@
 //Check Auth Token
 "SELECT r.Nama as role FROM Users u LEFT JOIN Roles r ON u.Roles = r.id
 WHERE"+query;
+
+//
