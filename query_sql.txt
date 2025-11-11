@@ -1,5 +1,6 @@
-//Check Auth Token
-"SELECT r.Nama as role FROM Users u LEFT JOIN Roles r ON u.Roles = r.id
-WHERE"+query;
+//Create Users
+START TRANSACTION;
+INSERT INTO Users(nama,password,token,roles_id) VALUE (?,?,?,?)
 
-//
+INSERT INTO Siswa(id,kelas_id,jurusan_id) VALUE (?,?,?)
+

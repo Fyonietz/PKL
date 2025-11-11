@@ -24,10 +24,10 @@ DROP TABLE IF EXISTS `Jurusan`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8mb4 */;
 CREATE TABLE `Jurusan` (
-  `id` int(11) NOT NULL AUTO_INCREMENT,
-  `Nama` varchar(100) DEFAULT NULL,
+  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `nama` varchar(255) NOT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -37,6 +37,8 @@ CREATE TABLE `Jurusan` (
 LOCK TABLES `Jurusan` WRITE;
 /*!40000 ALTER TABLE `Jurusan` DISABLE KEYS */;
 set autocommit=0;
+INSERT INTO `Jurusan` VALUES
+(1,'Super');
 /*!40000 ALTER TABLE `Jurusan` ENABLE KEYS */;
 UNLOCK TABLES;
 commit;
@@ -49,10 +51,10 @@ DROP TABLE IF EXISTS `Kelas`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8mb4 */;
 CREATE TABLE `Kelas` (
-  `id` int(11) NOT NULL AUTO_INCREMENT,
-  `Nama` varchar(50) DEFAULT NULL,
+  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `nama` varchar(255) NOT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -62,7 +64,36 @@ CREATE TABLE `Kelas` (
 LOCK TABLES `Kelas` WRITE;
 /*!40000 ALTER TABLE `Kelas` DISABLE KEYS */;
 set autocommit=0;
+INSERT INTO `Kelas` VALUES
+(1,'Super');
 /*!40000 ALTER TABLE `Kelas` ENABLE KEYS */;
+UNLOCK TABLES;
+commit;
+
+--
+-- Table structure for table `Pembimbing`
+--
+
+DROP TABLE IF EXISTS `Pembimbing`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8mb4 */;
+CREATE TABLE `Pembimbing` (
+  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `jurusan_id` int(10) unsigned NOT NULL,
+  PRIMARY KEY (`id`),
+  KEY `jurusan_id_fk` (`jurusan_id`),
+  CONSTRAINT `jurusan_id_fk` FOREIGN KEY (`jurusan_id`) REFERENCES `Jurusan` (`id`) ON DELETE NO ACTION ON UPDATE NO ACTION
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `Pembimbing`
+--
+
+LOCK TABLES `Pembimbing` WRITE;
+/*!40000 ALTER TABLE `Pembimbing` DISABLE KEYS */;
+set autocommit=0;
+/*!40000 ALTER TABLE `Pembimbing` ENABLE KEYS */;
 UNLOCK TABLES;
 commit;
 
@@ -74,14 +105,13 @@ DROP TABLE IF EXISTS `Perusahaan`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8mb4 */;
 CREATE TABLE `Perusahaan` (
-  `Id` int(11) NOT NULL AUTO_INCREMENT,
-  `Nama` varchar(255) DEFAULT NULL,
-  `Alamat` varchar(255) DEFAULT NULL,
-  `Benefit` text DEFAULT NULL,
-  `JurusanId` int(11) DEFAULT NULL,
-  PRIMARY KEY (`Id`),
-  KEY `JurusanId` (`JurusanId`),
-  CONSTRAINT `Perusahaan_ibfk_1` FOREIGN KEY (`JurusanId`) REFERENCES `Jurusan` (`id`)
+  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `benefit` text NOT NULL,
+  `alamat` text NOT NULL,
+  `jurusan_id` int(10) unsigned NOT NULL,
+  PRIMARY KEY (`id`),
+  KEY `fk_jurusan_id` (`jurusan_id`),
+  CONSTRAINT `fk_jurusan_id` FOREIGN KEY (`jurusan_id`) REFERENCES `Jurusan` (`id`) ON DELETE NO ACTION ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
@@ -104,10 +134,10 @@ DROP TABLE IF EXISTS `Roles`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8mb4 */;
 CREATE TABLE `Roles` (
-  `id` int(11) NOT NULL AUTO_INCREMENT,
-  `Nama` varchar(50) DEFAULT NULL,
+  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `nama` varchar(255) DEFAULT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=6 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -118,8 +148,98 @@ LOCK TABLES `Roles` WRITE;
 /*!40000 ALTER TABLE `Roles` DISABLE KEYS */;
 set autocommit=0;
 INSERT INTO `Roles` VALUES
-(1,'Admin');
+(1,'Admin'),
+(2,'Kaprodi'),
+(3,'Perusahaan'),
+(4,'Pembimbing'),
+(5,'Siswa');
 /*!40000 ALTER TABLE `Roles` ENABLE KEYS */;
+UNLOCK TABLES;
+commit;
+
+--
+-- Table structure for table `Siswa`
+--
+
+DROP TABLE IF EXISTS `Siswa`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8mb4 */;
+CREATE TABLE `Siswa` (
+  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `kelas_id` int(10) unsigned NOT NULL,
+  `jurusan_id` int(10) unsigned NOT NULL,
+  PRIMARY KEY (`id`),
+  KEY `kelas_id` (`kelas_id`),
+  KEY `jurusan_id` (`jurusan_id`),
+  CONSTRAINT `jurusan_id` FOREIGN KEY (`jurusan_id`) REFERENCES `Jurusan` (`id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
+  CONSTRAINT `kelas_id` FOREIGN KEY (`kelas_id`) REFERENCES `Kelas` (`id`) ON DELETE NO ACTION ON UPDATE NO ACTION
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `Siswa`
+--
+
+LOCK TABLES `Siswa` WRITE;
+/*!40000 ALTER TABLE `Siswa` DISABLE KEYS */;
+set autocommit=0;
+/*!40000 ALTER TABLE `Siswa` ENABLE KEYS */;
+UNLOCK TABLES;
+commit;
+
+--
+-- Table structure for table `Siswa_Pembimbing`
+--
+
+DROP TABLE IF EXISTS `Siswa_Pembimbing`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8mb4 */;
+CREATE TABLE `Siswa_Pembimbing` (
+  `id_siswa` int(10) unsigned NOT NULL,
+  `id_pembimbing` int(10) unsigned NOT NULL,
+  PRIMARY KEY (`id_siswa`),
+  KEY `id_pembimbing_fk` (`id_pembimbing`),
+  CONSTRAINT `id_pembimbing_fk` FOREIGN KEY (`id_pembimbing`) REFERENCES `Pembimbing` (`id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
+  CONSTRAINT `id_siswa_fk` FOREIGN KEY (`id_siswa`) REFERENCES `Siswa` (`id`) ON DELETE NO ACTION ON UPDATE NO ACTION
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `Siswa_Pembimbing`
+--
+
+LOCK TABLES `Siswa_Pembimbing` WRITE;
+/*!40000 ALTER TABLE `Siswa_Pembimbing` DISABLE KEYS */;
+set autocommit=0;
+/*!40000 ALTER TABLE `Siswa_Pembimbing` ENABLE KEYS */;
+UNLOCK TABLES;
+commit;
+
+--
+-- Table structure for table `Siswa_Perusahaan`
+--
+
+DROP TABLE IF EXISTS `Siswa_Perusahaan`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8mb4 */;
+CREATE TABLE `Siswa_Perusahaan` (
+  `id_siswa` int(10) unsigned NOT NULL,
+  `id_perusahaan` int(10) unsigned NOT NULL,
+  PRIMARY KEY (`id_siswa`),
+  KEY `fk_id_perusahaan` (`id_perusahaan`),
+  CONSTRAINT `fk_id_perusahaan` FOREIGN KEY (`id_perusahaan`) REFERENCES `Perusahaan` (`id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
+  CONSTRAINT `fk_id_siswa` FOREIGN KEY (`id_siswa`) REFERENCES `Siswa` (`id`) ON DELETE NO ACTION ON UPDATE NO ACTION
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `Siswa_Perusahaan`
+--
+
+LOCK TABLES `Siswa_Perusahaan` WRITE;
+/*!40000 ALTER TABLE `Siswa_Perusahaan` DISABLE KEYS */;
+set autocommit=0;
+/*!40000 ALTER TABLE `Siswa_Perusahaan` ENABLE KEYS */;
 UNLOCK TABLES;
 commit;
 
@@ -131,33 +251,14 @@ DROP TABLE IF EXISTS `Users`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8mb4 */;
 CREATE TABLE `Users` (
-  `Id` int(11) NOT NULL AUTO_INCREMENT,
-  `Nama` varchar(255) DEFAULT NULL,
-  `Password` varchar(255) DEFAULT NULL,
-  `Token` varchar(255) DEFAULT NULL,
-  `Roles` int(11) DEFAULT NULL,
-  `KelasId` int(11) DEFAULT NULL,
-  `JurusanId` int(11) DEFAULT NULL,
-  `NamaPembimbing` varchar(255) DEFAULT NULL,
-  `TempatPerusahaanId` int(11) DEFAULT NULL,
-  `SiswaDibimbing` varchar(255) DEFAULT NULL,
-  `JurusanKaprodiId` int(11) DEFAULT NULL,
-  `AlamatPerusahaan` varchar(255) DEFAULT NULL,
-  `BenefitPerusahaan` text DEFAULT NULL,
-  `JurusanPerusahaanId` int(11) DEFAULT NULL,
-  PRIMARY KEY (`Id`),
-  KEY `Roles` (`Roles`),
-  KEY `KelasId` (`KelasId`),
-  KEY `JurusanId` (`JurusanId`),
-  KEY `TempatPerusahaanId` (`TempatPerusahaanId`),
-  KEY `JurusanKaprodiId` (`JurusanKaprodiId`),
-  KEY `JurusanPerusahaanId` (`JurusanPerusahaanId`),
-  CONSTRAINT `Users_ibfk_1` FOREIGN KEY (`Roles`) REFERENCES `Roles` (`id`),
-  CONSTRAINT `Users_ibfk_2` FOREIGN KEY (`KelasId`) REFERENCES `Kelas` (`id`),
-  CONSTRAINT `Users_ibfk_3` FOREIGN KEY (`JurusanId`) REFERENCES `Jurusan` (`id`),
-  CONSTRAINT `Users_ibfk_4` FOREIGN KEY (`TempatPerusahaanId`) REFERENCES `Perusahaan` (`Id`),
-  CONSTRAINT `Users_ibfk_5` FOREIGN KEY (`JurusanKaprodiId`) REFERENCES `Jurusan` (`id`),
-  CONSTRAINT `Users_ibfk_6` FOREIGN KEY (`JurusanPerusahaanId`) REFERENCES `Jurusan` (`id`)
+  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `nama` varchar(255) NOT NULL,
+  `password` varchar(255) NOT NULL,
+  `token` varchar(255) NOT NULL,
+  `roles_id` int(10) unsigned NOT NULL,
+  PRIMARY KEY (`id`),
+  KEY `fk_roles_id` (`roles_id`),
+  CONSTRAINT `fk_roles_id` FOREIGN KEY (`roles_id`) REFERENCES `Roles` (`id`) ON DELETE NO ACTION ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
@@ -181,4 +282,4 @@ commit;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*M!100616 SET NOTE_VERBOSITY=@OLD_NOTE_VERBOSITY */;
 
--- Dump completed on 2025-11-07 11:44:02
+-- Dump completed on 2025-11-11 14:07:00

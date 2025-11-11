@@ -1,11 +1,17 @@
+{
+  Admin:1,
+  Kaprodi:2,
+  Pembimbing:3,
+  Perusahaan:4,
+  Siswa:5
+}
+
 //Api Create Users
 //[/api/admin/user/create]
 
 {
   "Id": 1,
   "JurusanId": 1,
-  "JurusanKaprodiId": 1,
-  "JurusanPerusahaanId": 1,
   "KelasId": 1,
   "Nama": "Admin",
   "NamaPembimbing": "",
@@ -16,7 +22,7 @@
 }
 
 //Api Read Users[filtering]
-//[/api/admin/user/create]
+//[/api/admin/user/]
 {
   "where":"Roles",
   "value": 2
