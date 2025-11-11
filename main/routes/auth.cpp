@@ -32,7 +32,7 @@ std::optional<nlohmann::json> CheckAuthToken(struct mg_connection *conn,
                              token.length());
 
     std::string query_builder = "SELECT r.Nama as role FROM Users u "
-                                "LEFT JOIN Roles r ON u.Roles = r.id "
+                                "LEFT JOIN Roles r ON u.roles_id = r.id "
                                 "WHERE u.token = '" +
                                 std::string(escaped_token) + "'";
 

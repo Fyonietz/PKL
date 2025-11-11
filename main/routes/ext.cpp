@@ -6,6 +6,16 @@
 
 
 route("/api/roles/read", ext_roles) {
+ auto authInfo = CheckAuthToken(connection, Auth::Roles::Admin);
+
+  CORS(connection);
+
+  if (!authInfo) {
+    Server.Response(connection, 401, "Unauthorized",
+                    R"({"error":"Unauthorized"})");
+    return 401;
+  }
+
     // Method check (only allow GET, others return 405)
     if(!Method(connection,"GET")){
       return 405;

@@ -1,3 +1,49 @@
+//Reset DB
+DELIMITER $$
+
+CREATE PROCEDURE delete_and_reset()
+BEGIN
+    DECLARE done INT DEFAULT 0;
+    DECLARE tbl_name VARCHAR(255);
+    
+    DECLARE cur CURSOR FOR
+        SELECT table_name
+        FROM information_schema.tables
+        WHERE table_schema = 'web_pkl'
+          AND table_name NOT IN ('Roles', 'Jurusan', 'Kelas');
+    
+    DECLARE CONTINUE HANDLER FOR NOT FOUND SET done = 1;
+
+    OPEN cur;
+
+    read_loop: LOOP
+        FETCH cur INTO tbl_name;
+        IF done = 1 THEN
+            LEAVE read_loop;
+        END IF;
+
+        -- Delete all rows
+        SET @s = CONCAT('DELETE FROM `', tbl_name, '`;');
+        PREPARE stmt FROM @s;
+        EXECUTE stmt;
+        DEALLOCATE PREPARE stmt;
+        
+        -- Reset AUTO_INCREMENT
+        SET @s = CONCAT('ALTER TABLE `', tbl_name, '` AUTO_INCREMENT = 1;');
+        PREPARE stmt FROM @s;
+        EXECUTE stmt;
+        DEALLOCATE PREPARE stmt;
+
+    END LOOP read_loop;
+
+    CLOSE cur;
+END$$
+
+DELIMITER ;
+
+-- Call the procedure
+CALL delete_and_reset();
+
 //Create Users
 START TRANSACTION;
 INSERT INTO Users(nama,password,token,roles_id) VALUE (?,?,?,?)

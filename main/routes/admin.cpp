@@ -24,7 +24,6 @@ route("/api/admin/user/create", create_user) {
     return 500;
   }
   std::string post = Server.Read(connection);
-  std::cout << post << std::endl;
   nlohmann::json post_as_json = nlohmann::json::parse(post,nullptr,false);
   // Main logic runs when ASYNC is true
   auto a = Server.method.async([&]() {
@@ -38,7 +37,7 @@ route("/api/admin/user/create", create_user) {
       Users.password = post_as_json.value("Password", "");
       Users.rolesId = post_as_json.value("Roles", 1);
       
-      //Siswa
+      //Siswa and Pembimbing
       Users.kelasId = post_as_json.value("KelasId", 1);
       Users.jurusanId = post_as_json.value("JurusanId", 1);
       

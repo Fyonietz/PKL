@@ -78,10 +78,9 @@ route("/api/login", api_login) {
 
             std::string query = 
                 "SELECT r.Nama as role FROM Users u "
-                "LEFT JOIN Roles r ON u.Roles = r.id "
+                "LEFT JOIN Roles r ON u.roles_id = r.id "
                 "WHERE token='" + token + "'";
             nlohmann::json result = db->db_select(conn.get(), query.c_str());
-
             if(!result.is_array() || result.empty()){
                 Server.Response(connection, 404, "User Not Found", 
                                 R"({"error":"User Not Found Please Register"})");
