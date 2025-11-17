@@ -1,5 +1,5 @@
 //Phoenix App-Settings Or env
-IP_CORS=http://localhost:8000
+IP_CORS=http://192.168.41.65:3000
 DB_HOST=localhost
 DB_USER=webpkl
 DB_PW=ggmu

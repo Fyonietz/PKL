@@ -91,7 +91,6 @@ route("/api/admin/user/create", create_user) {
 route("/api/admin/user/read", read_user_test) {
   auto authInfo = CheckAuthToken(connection, Auth::Roles::Admin);
   CORS(connection);
-
   if (!authInfo) {
     Server.Response(connection, 401, "Unauthorized",
                     R"({"error":"Unauthorized"})");
@@ -113,8 +112,12 @@ route("/api/admin/user/read", read_user_test) {
       try {
         query = db->db_select(
             conn.get(),
-            R"(SELECT Users.id,Users.Nama,Users.Password,Roles.Nama as Role,Jurusan.Nama as Jurusan FROM Users LEFT JOIN Roles ON
-Users.Roles = Roles.id LEFT JOIN Jurusan ON Users.JurusanId = Jurusan.id)");
+            R"(SELECT Users.id,Users.Nama,Users.Password,Roles.Nama as Role,Jurusan.nama As `Jurusan`,Kelas.nama As Kelas 
+  FROM Users 
+  LEFT JOIN Siswa ON `Users`.id = `Siswa`.id
+  LEFT JOIN Roles ON Users.roles_id = Roles.id 
+  LEFT JOIN Jurusan ON `Siswa`.jurusan_id=`Jurusan`.id
+  LEFT JOIN `Kelas` ON `Siswa`.kelas_id = `Kelas`.id)");
       } catch (const std::exception &e) {
         std::cerr << "DB select error: " << e.what() << std::endl;
         return std::make_pair(400,

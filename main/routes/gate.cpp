@@ -67,9 +67,8 @@ route("/api/login", api_login) {
                 return;
             }
 
-            std::string nama = post_as_json.value("Nama", "");
-            std::string password = post_as_json.value("Password", "");
-
+            std::string nama = post_as_json.value("nama", "");
+            std::string password = post_as_json.value("password", "");
             auto db = MySQLPool::getInstance();
             auto conn = db->get_connection();
 
@@ -106,7 +105,6 @@ route("/api/login", api_login) {
                 {"auth_token",token}
             };
             std::string response_str = response_json.dump();
-
             mg_printf(connection,
                       "HTTP/1.1 200 OK\r\n"
                       "Set-Cookie: auth_token=%s; Path=/; SameSite=Lax; Max-Age=3600\r\n"

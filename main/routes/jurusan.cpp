@@ -6,7 +6,7 @@
 #include <phoenix.hpp>
 #include <string>
 
-route("/api/admin/kelas/create",kelas_create){
+route("/api/admin/jurusan/create",jurusan_create){
   auto authInfo = CheckAuthToken(connection, Auth::Roles::Admin);
 
   CORS(connection);
@@ -24,14 +24,15 @@ route("/api/admin/kelas/create",kelas_create){
   }
   std::string post = Server.Read(connection);
   nlohmann::json post_as_json = nlohmann::json::parse(post,nullptr,false);
-  std::cout << post_as_json.dump() << std::endl;
   auto a = Server.method.async([&](){
     try{
       auto db = MySQLPool::getInstance();
       auto cursor = db->get_connection();  
-      Kelas.nama = post_as_json.value("nama","");
-      auto stmt = db->db_prep(cursor.get(),"INSERT INTO Kelas(nama) VALUES (?)");
-      stmt->bind(Kelas.nama)->execute();
+      Jurusan.kode = post_as_json.value("kode","");
+      Jurusan.nama = post_as_json.value("nama","");
+      Jurusan.deskripsi = post_as_json.value("deksripsi","");
+      auto stmt = db->db_prep(cursor.get(),"INSERT INTO Jurusan(nama,kode,deskripsi) VALUES (?,?,?)");
+      stmt->bind(Jurusan.nama)->bind(Jurusan.kode)->bind(Jurusan.deskripsi)->execute();
       delete stmt;
       Server.Response(connection,200,"Ok","");
       return 200;
@@ -45,7 +46,7 @@ route("/api/admin/kelas/create",kelas_create){
   return a.get();
 }
 
-route("/api/admin/kelas/read",kelas_read){
+route("/api/admin/jurusan/read",jurusan_read){
   auto authInfo = CheckAuthToken(connection, Auth::Roles::Admin);
 
   CORS(connection);
@@ -68,7 +69,7 @@ route("/api/admin/kelas/read",kelas_read){
       nlohmann::json query;
 
       try{
-        query = db->db_select(cursor.get(),"SELECT * FROM Kelas");
+        query = db->db_select(cursor.get(),"SELECT * FROM Jurusan");
         Server.Response(connection,202,"Ok",query.dump());
         return {202,"Ok"};
       }catch(std::exception& e){
@@ -84,7 +85,7 @@ route("/api/admin/kelas/read",kelas_read){
   }
 }
 
-route("/api/admin/kelas/delete",delete_kelas){
+route("/api/admin/jurusan/delete",delete_jurusan){
   auto authInfo = CheckAuthToken(connection, Auth::Roles::Admin);
 
   CORS(connection);
@@ -106,9 +107,9 @@ route("/api/admin/kelas/delete",delete_kelas){
     try{
       auto db = MySQLPool::getInstance();
       auto cursor = db->get_connection();  
-      Kelas.id = post_as_json.value("id",0);
-      auto stmt = db->db_prep(cursor.get(),"DELETE FROM Kelas WHERE id=?");
-      stmt->bind(Kelas.id)->execute();
+      Jurusan.id = post_as_json.value("id",0);
+      auto stmt = db->db_prep(cursor.get(),"DELETE FROM Jurusan WHERE id=?");
+      stmt->bind(Jurusan.id)->execute();
       delete stmt;
       Server.Response(connection,200,"Ok","");
       return 200;

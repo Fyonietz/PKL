@@ -17,6 +17,8 @@ struct modelKelas {
 struct modelJurusan {
   int id;
   std::string nama;
+  std::string kode;
+  std::string deskripsi;
 };
 
 struct modelPerusahaan {
