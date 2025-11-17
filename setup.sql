@@ -26,8 +26,10 @@ DROP TABLE IF EXISTS `Jurusan`;
 CREATE TABLE `Jurusan` (
   `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
   `nama` varchar(255) NOT NULL,
+  `kode` varchar(255) NOT NULL,
+  `deskripsi` varchar(255) NOT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=11 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -38,7 +40,9 @@ LOCK TABLES `Jurusan` WRITE;
 /*!40000 ALTER TABLE `Jurusan` DISABLE KEYS */;
 set autocommit=0;
 INSERT INTO `Jurusan` VALUES
-(1,'Super');
+(8,'SUPER','SUPER','KHUSUS ADMIN'),
+(9,'REKAYASA PERANGKAT LUNAK','RPL','JURUSAN PEAK'),
+(10,'TEKNIK KERJA JARINGAN','TKJ','KERJAAAAAA');
 /*!40000 ALTER TABLE `Jurusan` ENABLE KEYS */;
 UNLOCK TABLES;
 commit;
@@ -54,7 +58,7 @@ CREATE TABLE `Kelas` (
   `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
   `nama` varchar(255) NOT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -65,7 +69,9 @@ LOCK TABLES `Kelas` WRITE;
 /*!40000 ALTER TABLE `Kelas` DISABLE KEYS */;
 set autocommit=0;
 INSERT INTO `Kelas` VALUES
-(1,'Super');
+(1,'Super'),
+(2,'SDFDEFD'),
+(3,'kelas gagah');
 /*!40000 ALTER TABLE `Kelas` ENABLE KEYS */;
 UNLOCK TABLES;
 commit;
@@ -83,7 +89,7 @@ CREATE TABLE `Pembimbing` (
   PRIMARY KEY (`id`),
   KEY `jurusan_id_fk` (`jurusan_id`),
   CONSTRAINT `jurusan_id_fk` FOREIGN KEY (`jurusan_id`) REFERENCES `Jurusan` (`id`) ON DELETE NO ACTION ON UPDATE NO ACTION
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=8 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -93,6 +99,9 @@ CREATE TABLE `Pembimbing` (
 LOCK TABLES `Pembimbing` WRITE;
 /*!40000 ALTER TABLE `Pembimbing` DISABLE KEYS */;
 set autocommit=0;
+INSERT INTO `Pembimbing` VALUES
+(7,8),
+(6,10);
 /*!40000 ALTER TABLE `Pembimbing` ENABLE KEYS */;
 UNLOCK TABLES;
 commit;
@@ -173,7 +182,7 @@ CREATE TABLE `Siswa` (
   KEY `jurusan_id` (`jurusan_id`),
   CONSTRAINT `jurusan_id` FOREIGN KEY (`jurusan_id`) REFERENCES `Jurusan` (`id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
   CONSTRAINT `kelas_id` FOREIGN KEY (`kelas_id`) REFERENCES `Kelas` (`id`) ON DELETE NO ACTION ON UPDATE NO ACTION
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=6 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -183,6 +192,8 @@ CREATE TABLE `Siswa` (
 LOCK TABLES `Siswa` WRITE;
 /*!40000 ALTER TABLE `Siswa` DISABLE KEYS */;
 set autocommit=0;
+INSERT INTO `Siswa` VALUES
+(5,3,9);
 /*!40000 ALTER TABLE `Siswa` ENABLE KEYS */;
 UNLOCK TABLES;
 commit;
@@ -259,7 +270,7 @@ CREATE TABLE `Users` (
   PRIMARY KEY (`id`),
   KEY `fk_roles_id` (`roles_id`),
   CONSTRAINT `fk_roles_id` FOREIGN KEY (`roles_id`) REFERENCES `Roles` (`id`) ON DELETE NO ACTION ON UPDATE NO ACTION
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=8 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -269,6 +280,11 @@ CREATE TABLE `Users` (
 LOCK TABLES `Users` WRITE;
 /*!40000 ALTER TABLE `Users` DISABLE KEYS */;
 set autocommit=0;
+INSERT INTO `Users` VALUES
+(1,'Admin','ggmu','f8f5dfbb2b560434ffe7716cf569375d3a558f8a851a7840b2ff2e11ac62a2e2',1),
+(5,'test','cobacoba','af887fa70ed2a7de9ede76f408993bb62344abe73f9c2391d7ad644fde0525ca',5),
+(6,'apis','test','ae67f5bec740cb39b6a3f3c4d7c97f5cdb8f5728f90c7d9ebd0fdbd30b17a12c',4),
+(7,'operator','elitis','7cad169ec0be6aed883e428539f12cb8a528f11ddfbe18f6ef5d23d79eaf1b4b',4);
 /*!40000 ALTER TABLE `Users` ENABLE KEYS */;
 UNLOCK TABLES;
 commit;
@@ -282,4 +298,4 @@ commit;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*M!100616 SET NOTE_VERBOSITY=@OLD_NOTE_VERBOSITY */;
 
--- Dump completed on 2025-11-11 14:07:00
+-- Dump completed on 2025-11-17 14:29:51

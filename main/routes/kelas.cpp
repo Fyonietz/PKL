@@ -97,7 +97,7 @@ route("/api/admin/kelas/delete",delete_kelas){
 
   if (!ASYNC) {
     Server.Response(connection, 500, "Error",
-                    R"({"Message":"ASYNC mode disabled"})");
+                    R"({"Message":"ASYNC mode failed"})");
     return 500;
   }
  std::string post = Server.Read(connection);
