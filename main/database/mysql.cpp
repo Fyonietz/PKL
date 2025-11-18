@@ -198,50 +198,88 @@ json PreparedStatement::get_results() {
     if (!result_metadata) {
         return json::array();
     }
-    
+
     unsigned int num_fields = mysql_num_fields(result_metadata);
     MYSQL_FIELD* fields = mysql_fetch_fields(result_metadata);
-    
+
     // Prepare result bindings
     std::vector<MYSQL_BIND> result_binds(num_fields);
-    std::vector<char> buffers[num_fields];
+    std::vector<std::vector<char>> buffers(num_fields);
     std::vector<unsigned long> result_lengths(num_fields);
     std::vector<my_bool> result_is_nulls(num_fields);
-    
+
     memset(result_binds.data(), 0, sizeof(MYSQL_BIND) * num_fields);
-    
+
     for (unsigned int i = 0; i < num_fields; i++) {
-        buffers[i].resize(1024); // Allocate buffer
-        result_binds[i].buffer_type = MYSQL_TYPE_STRING;
+        // Allocate buffer depending on type
+        switch (fields[i].type) {
+            case MYSQL_TYPE_TINY:
+            case MYSQL_TYPE_SHORT:
+            case MYSQL_TYPE_LONG:
+            case MYSQL_TYPE_LONGLONG:
+            case MYSQL_TYPE_INT24:
+                buffers[i].resize(sizeof(long long));
+                result_binds[i].buffer_type = MYSQL_TYPE_LONGLONG;
+                break;
+            case MYSQL_TYPE_FLOAT:
+            case MYSQL_TYPE_DOUBLE:
+            case MYSQL_TYPE_DECIMAL:
+            case MYSQL_TYPE_NEWDECIMAL:
+                buffers[i].resize(sizeof(double));
+                result_binds[i].buffer_type = MYSQL_TYPE_DOUBLE;
+                break;
+            default:
+                buffers[i].resize(1024); // string/blob
+                result_binds[i].buffer_type = MYSQL_TYPE_STRING;
+                break;
+        }
+
         result_binds[i].buffer = buffers[i].data();
-        result_binds[i].buffer_length = 1024;
+        result_binds[i].buffer_length = buffers[i].size();
         result_binds[i].length = &result_lengths[i];
         result_binds[i].is_null = &result_is_nulls[i];
     }
-    
+
     if (mysql_stmt_bind_result(stmt, result_binds.data())) {
         mysql_free_result(result_metadata);
         return json::array();
     }
-    
+
     json result_json = json::array();
-    
+
     while (mysql_stmt_fetch(stmt) == 0) {
         json row_json;
         for (unsigned int i = 0; i < num_fields; i++) {
             if (result_is_nulls[i]) {
                 row_json[fields[i].name] = nullptr;
-            } else {
-                row_json[fields[i].name] = std::string(buffers[i].data(), result_lengths[i]);
+                continue;
+            }
+
+            switch (fields[i].type) {
+                case MYSQL_TYPE_TINY:
+                case MYSQL_TYPE_SHORT:
+                case MYSQL_TYPE_LONG:
+                case MYSQL_TYPE_LONGLONG:
+                case MYSQL_TYPE_INT24:
+                    row_json[fields[i].name] = *(long long*)buffers[i].data();
+                    break;
+                case MYSQL_TYPE_FLOAT:
+                case MYSQL_TYPE_DOUBLE:
+                case MYSQL_TYPE_DECIMAL:
+                case MYSQL_TYPE_NEWDECIMAL:
+                    row_json[fields[i].name] = *(double*)buffers[i].data();
+                    break;
+                default:
+                    row_json[fields[i].name] = std::string(buffers[i].data(), result_lengths[i]);
+                    break;
             }
         }
         result_json.push_back(row_json);
     }
-    
+
     mysql_free_result(result_metadata);
     return result_json;
 }
-
 // MySQLPool implementation (existing code remains the same)
 MySQLPool::MySQLPool(const std::string& host, const std::string& user, 
                      const std::string& password, const std::string& dbname, 

@@ -266,95 +266,187 @@ json insert_company(MYSQL *conn, const PerusahaanFormData &data) {
   return response;
 }
 
-// GET company by ID with all related data
+// Helper function to safely get string from JSON (handles null, string, number, etc.)
+std::string safe_get_string(const json& j, const std::string& key, const std::string& default_value = "") {
+  if (!j.contains(key)) {
+    return default_value;
+  }
+  
+  const auto& value = j[key];
+  
+  if (value.is_null()) {
+    return default_value;
+  } else if (value.is_string()) {
+    return value.get<std::string>();
+  } else if (value.is_number_integer()) {
+    return std::to_string(value.get<int>());
+  } else if (value.is_number_float()) {
+    return std::to_string(value.get<double>());
+  } else if (value.is_boolean()) {
+    return value.get<bool>() ? "true" : "false";
+  }
+  
+  return default_value;
+}
+
+// Helper function to safely get int from JSON
+int safe_get_int(const json& j, const std::string& key, int default_value = 0) {
+  if (!j.contains(key)) {
+    return default_value;
+  }
+  
+  const auto& value = j[key];
+  
+  if (value.is_null()) {
+    return default_value;
+  } else if (value.is_number_integer()) {
+    return value.get<int>();
+  } else if (value.is_string()) {
+    std::string str = value.get<std::string>();
+    if (str.empty()) return default_value;
+    try {
+      return std::stoi(str);
+    } catch (...) {
+      return default_value;
+    }
+  } else if (value.is_number_float()) {
+    return static_cast<int>(value.get<double>());
+  }
+  
+  return default_value;
+}
+
+// Updated get_company_by_id with safe accessors
 json get_company_by_id(MYSQL *conn, int company_id) {
   MySQLPool *pool = MySQLPool::getInstance();
   json result;
 
-  // 1. Get basic company info
-  std::string basic_sql = "SELECT id, nama, bio, deskripsi, alamat, phone, "
-                          "email, image_url, created_at "
-                          "FROM Perusahaan WHERE id = ?";
+  try {
+    // 1. Get basic company info
+    std::string basic_sql = "SELECT id, nama, bio, deskripsi, alamat, phone, "
+                            "email, image_url, created_at "
+                            "FROM Perusahaan WHERE id = ?";
 
-  json company_data = pool->db_select_prep(
-      conn, basic_sql,
-      [company_id](PreparedStatement *stmt) { stmt->bind(company_id); });
+    json company_data = pool->db_select_prep(
+        conn, basic_sql,
+        [company_id](PreparedStatement *stmt) { stmt->bind(company_id); });
 
-  if (company_data.empty()) {
+    if (company_data.empty()) {
+      std::cerr << "No company found with ID: " << company_id << std::endl;
+      return nullptr;
+    }
+
+    const json& raw_data = company_data[0];
+    
+    // Safely extract all fields
+    result["id"] = safe_get_int(raw_data, "id", company_id);
+    result["nama"] = safe_get_string(raw_data, "nama", "");
+    result["name"] = result["nama"]; // Alias
+    result["bio"] = safe_get_string(raw_data, "bio", "");
+    result["deskripsi"] = safe_get_string(raw_data, "deskripsi", "");
+    result["about"] = result["deskripsi"]; // Alias
+    result["alamat"] = safe_get_string(raw_data, "alamat", "");
+    result["address"] = result["alamat"]; // Alias
+    result["phone"] = safe_get_string(raw_data, "phone", "");
+    result["email"] = safe_get_string(raw_data, "email", "");
+    result["created_at"] = safe_get_string(raw_data, "created_at", "");
+    
+    // Handle image_url
+    std::string img_url = safe_get_string(raw_data, "image_url", "");
+    if (img_url.empty()) {
+      std::string company_name = result["nama"].get<std::string>();
+      if (!company_name.empty()) {
+        img_url = get_company_image_url(company_name);
+      } else {
+        img_url = "/uploads/default.png";
+      }
+    }
+    result["image_url"] = img_url;
+    result["gambar"] = img_url; // Alias
+
+    // 2. Get jurusan
+    std::string jurusan_sql =
+        "SELECT j.id, j.nama, j.kode FROM Perusahaan_Jurusan pj "
+        "JOIN Jurusan j ON pj.jurusan_id = j.id "
+        "WHERE pj.perusahaan_id = ? ORDER BY j.nama";
+
+    json jurusan_list = pool->db_select_prep(
+        conn, jurusan_sql,
+        [company_id](PreparedStatement *stmt) { stmt->bind(company_id); });
+
+
+    result["jurusan"] = json::array();
+    for (const auto& j : jurusan_list) {
+      std::string jurusan_name = safe_get_string(j, "nama", "");
+      if (!jurusan_name.empty()) {
+        result["jurusan"].push_back(jurusan_name);
+      }
+    }
+
+    // 3. Get benefits
+    std::string benefit_sql = "SELECT benefit FROM Perusahaan_Benefit "
+                              "WHERE perusahaan_id = ? ORDER BY urutan";
+
+    json benefit_list = pool->db_select_prep(
+        conn, benefit_sql,
+        [company_id](PreparedStatement *stmt) { stmt->bind(company_id); });
+
+
+    result["benefit"] = json::array();
+    result["benefits"] = json::array(); // Alias
+    for (const auto& b : benefit_list) {
+      std::string benefit_text = safe_get_string(b, "benefit", "");
+      if (!benefit_text.empty()) {
+        result["benefit"].push_back(benefit_text);
+        result["benefits"].push_back(benefit_text);
+      }
+    }
+
+    // 4. Get syarat
+    std::string syarat_sql = "SELECT syarat FROM Perusahaan_Syarat "
+                             "WHERE perusahaan_id = ? ORDER BY urutan";
+
+    json syarat_list = pool->db_select_prep(
+        conn, syarat_sql,
+        [company_id](PreparedStatement *stmt) { stmt->bind(company_id); });
+
+
+    result["syarat"] = json::array();
+    for (const auto& s : syarat_list) {
+      std::string syarat_text = safe_get_string(s, "syarat", "");
+      if (!syarat_text.empty()) {
+        result["syarat"].push_back(syarat_text);
+      }
+    }
+
+    // 5. Get kuota
+    std::string kuota_sql = "SELECT jumlah, keterangan FROM Perusahaan_Kuota "
+                            "WHERE perusahaan_id = ? LIMIT 1";
+
+    json kuota_data = pool->db_select_prep(
+        conn, kuota_sql,
+        [company_id](PreparedStatement *stmt) { stmt->bind(company_id); });
+
+
+    if (!kuota_data.empty()) {
+      result["kuota"] = safe_get_int(kuota_data[0], "jumlah", 0);
+      result["kuota_keterangan"] = safe_get_string(kuota_data[0], "keterangan", "");
+    } else {
+      result["kuota"] = 0;
+      result["kuota_keterangan"] = "";
+    }
+
+    // Add default/additional fields for compatibility
+    result["bidang"] = "IT & Software"; // You might want to add this to database
+
+
+    return result;
+
+  } catch (const std::exception &e) {
+    std::cerr << "Exception in get_company_by_id: " << e.what() << std::endl;
     return nullptr;
   }
-
-  result = company_data[0];
-  
-  // If image_url is empty, generate it from company name
-  if (!result.contains("image_url") || result["image_url"].get<std::string>().empty()) {
-    std::string company_name = result["nama"].get<std::string>();
-    result["image_url"] = get_company_image_url(company_name);
-  }
-
-  // 2. Get jurusan
-  std::string jurusan_sql =
-      "SELECT j.id, j.nama, j.kode FROM Perusahaan_Jurusan pj "
-      "JOIN Jurusan j ON pj.jurusan_id = j.id "
-      "WHERE pj.perusahaan_id = ? ORDER BY j.nama";
-
-  json jurusan_list = pool->db_select_prep(
-      conn, jurusan_sql,
-      [company_id](PreparedStatement *stmt) { stmt->bind(company_id); });
-
-  result["jurusan"] = json::array();
-  for (const auto& j : jurusan_list) {
-    result["jurusan"].push_back(j["nama"].get<std::string>());
-  }
-
-  // 3. Get benefits
-  std::string benefit_sql = "SELECT benefit FROM Perusahaan_Benefit "
-                            "WHERE perusahaan_id = ? ORDER BY urutan";
-
-  json benefit_list = pool->db_select_prep(
-      conn, benefit_sql,
-      [company_id](PreparedStatement *stmt) { stmt->bind(company_id); });
-
-  result["benefit"] = json::array();
-  for (const auto& b : benefit_list) {
-    result["benefit"].push_back(b["benefit"].get<std::string>());
-  }
-
-  // 4. Get syarat
-  std::string syarat_sql = "SELECT syarat FROM Perusahaan_Syarat "
-                           "WHERE perusahaan_id = ? ORDER BY urutan";
-
-  json syarat_list = pool->db_select_prep(
-      conn, syarat_sql,
-      [company_id](PreparedStatement *stmt) { stmt->bind(company_id); });
-
-  result["syarat"] = json::array();
-  for (const auto& s : syarat_list) {
-    result["syarat"].push_back(s["syarat"].get<std::string>());
-  }
-
-  // 5. Get kuota
-  std::string kuota_sql = "SELECT jumlah, keterangan FROM Perusahaan_Kuota "
-                          "WHERE perusahaan_id = ? LIMIT 1";
-
-  json kuota_data = pool->db_select_prep(
-      conn, kuota_sql,
-      [company_id](PreparedStatement *stmt) { stmt->bind(company_id); });
-
-  if (!kuota_data.empty()) {
-    result["kuota"] = std::stoi(kuota_data[0]["jumlah"].get<std::string>());
-  } else {
-    result["kuota"] = 0;
-  }
-
-  // Add default fields
-  result["bidang"] = "IT & Software";
-  result["gambar"] = result["image_url"];
-  result["alamat"] = result.value("alamat", "");
-
-  return result;
 }
-
 // ----------------- Route Handlers -----------------
 
 // Create company (JSON only)
@@ -536,51 +628,83 @@ route("/api/admin/perusahaan/upload-image", upload_company_image) {
   return 200;
 }
 
-// Get company by ID
-route("/api/perusahaan/", get_company_detail) { 
-  CORS(connection);
-  const struct mg_request_info *req_info = mg_get_request_info(connection);
-  std::string uri = req_info->request_uri;
-  // CORS(connection);
-  std::string get_id = uri.substr(16);
-  std::cout <<"Located: " << get_id << std::endl;
-  if (!ASYNC) {
-    Server.Response(connection, 500, "Error",
-                    R"({"Message":"ASYNC mode Error"})");
-    return 500;
-  }
-
-  Server.method.async([&]() {
-    try {
-      auto db = MySQLPool::getInstance();
-      auto cursor = db->get_connection();
-
-      // Get company ID from URL params
-
-      json company = get_company_by_id(cursor.get(), std::stoi(get_id));
-
-      if (company.is_null()) {
-        Server.Response(connection, 404, "Not Found",
-                        R"({"error":"Company not found"})");
-        return 404;
-      }
-
-      std::string json_response = company.dump();
-      Server.Response(connection, 200, "OK", json_response.c_str());
-      return 200;
-
-    } catch (std::exception &e) {
-      std::cerr << "Exception: " << e.what() << std::endl;
-      Server.Response(connection, 500, "Internal Server Error",
-                      R"({"error":"Failed to fetch company"})");
-      return 500;
-    }
-  });
-  return 200;
+// Forwarding wrapper for requests without trailing slash -> keeps single handler
+int get_company_detail(struct mg_connection *connection, void *cb);
+route("/api/perusahaan", get_company_detail_redirect) {
+  return get_company_detail(connection, cb);
 }
 
+// Get company by ID (primary handler registered with trailing slash)
+route("/api/perusahaan/", get_company_detail) {
+  const mg_request_info *req = mg_get_request_info(connection);
+    std::string method = req->request_method;
+    // Use request_uri (portable) instead of local_uri which may be empty
+    std::string uri    = req->request_uri;
+
+    // LOG
+    std::cout << "HANDLER: " << uri << " | method=" << method << std::endl;
+
+    // ------- UNIVERSAL CORS --------
+    // mg_printf(connection,
+    //     "Access-Control-Allow-Origin: *\r\n"
+    //     "Access-Control-Allow-Methods: GET, POST, OPTIONS\r\n"
+    //     "Access-Control-Allow-Headers: Content-Type, Authorization\r\n"
+    // );
+    CORS(connection);
+
+    // -------- OPTIONS PRE-FLIGHT ----------
+    // if (method == "OPTIONS") {
+    //     mg_printf(connection,
+    //         "HTTP/1.1 200 OK\r\n"
+    //         "Content-Length: 0\r\n\r\n"
+    //     );
+    //     return 200;
+    // }
+
+    // --------- EXTRACT ID ----------
+    const std::string prefix = "/api/perusahaan/";
+    if (uri.rfind(prefix, 0) != 0) {
+        mg_printf(connection,
+            "HTTP/1.1 404 Not Found\r\n"
+            "Content-Length: 0\r\n\r\n"
+        );
+        return 404;
+    }
+
+    std::string id_str = uri.substr(prefix.size());  // after "/api/perusahaan/"
+    if (id_str.empty()) {
+        mg_printf(connection,
+            "HTTP/1.1 400 Bad Request\r\n"
+            "Content-Type: application/json\r\n"
+            "Content-Length: 0\r\n\r\n"
+        );
+        return 400;
+    }
+
+    int company_id = std::stoi(id_str);
+    auto db = MySQLPool::getInstance();
+    auto cursor = db->get_connection();
+    // -------- QUERY DATABASE ----------
+    json company = get_company_by_id(cursor.get(), company_id);
+    if (company.is_null() || company.contains("null")) {
+        std::string err = R"({"error":"Company not found"})";
+        Server.Response(connection,404,"Not Found",err);
+        return 404;
+    }
+
+    std::string json_res = company.dump();
+    // ------ NORMAL RESPONSE ------
+    mg_printf(connection,
+        "HTTP/1.1 200 OK\r\n"
+        "Content-Type: application/json\r\n"
+        "Content-Length: %zu\r\n\r\n%s",
+        json_res.size(), json_res.c_str()
+    );
+
+    return 200;}
+
 // Get all companies
-route("/api/companies", get_companies_list) {
+route("/api/perusahaan-all", get_companies_list) {
   CORS(connection);
 
   if (!ASYNC) {
@@ -604,10 +728,11 @@ route("/api/companies", get_companies_list) {
 
       json companies = db->db_select(cursor.get(), sql.c_str());
       
-      // Ensure each company has an image_url
+      // Ensure each company has an image_url (use .value to avoid type errors)
       for (auto& company : companies) {
-        if (!company.contains("image_url") || company["image_url"].get<std::string>().empty()) {
-          std::string company_name = company["nama"].get<std::string>();
+        std::string img_val = company.value("image_url", std::string());
+        if (img_val.empty()) {
+          std::string company_name = company.value("nama", std::string());
           company["image_url"] = get_company_image_url(company_name);
         }
       }

@@ -1,11 +1,11 @@
 #include "civetweb.h"
 #include <cstring>
 #include <phoenix.hpp>
-route("/api", api) {
-  Server.Response(connection, 200, "OK",
-                  R"({"Messages":"Hello From Phoenix"})");
-  return 200;
-};
+// route("/api", api) {
+//   Server.Response(connection, 200, "OK",
+//                   R"({"Messages":"Hello From Phoenix"})");
+//   return 200;
+// };
 
 route("/api/env", api_list) {
   std::string messages = R"({"Messages": "Hello From Env", "Env": ")" +
@@ -36,3 +36,9 @@ route("/api/cors", cors) {
   return 200;
 }
 
+const char *method(struct mg_connection *connection) {
+  const struct mg_request_info *request_info = mg_get_request_info(connection);
+  const char *method = request_info->request_method;
+
+  return method;
+}
